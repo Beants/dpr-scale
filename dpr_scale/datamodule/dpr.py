@@ -2,13 +2,17 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 import mmap
+import random
 from typing import Any, Dict, List
 
 import torch
 import torch.nn as nn
+from datasets import load_dataset
+from pytorch_lightning import LightningDataModule
+from torch.utils.data import Dataset
+
 from dpr_scale.transforms.dpr_distill_transform import DPRDistillTransform
 from dpr_scale.transforms.dpr_transform import DPRCrossAttentionTransform, DPRTransform
-
 from dpr_scale.transforms.hf_transform import HFTransform
 from dpr_scale.utils.utils import (
     ContiguousDistributedSampler,
@@ -16,8 +20,6 @@ from dpr_scale.utils.utils import (
     maybe_add_title,
     PathManager,
 )
-from pytorch_lightning import LightningDataModule
-import random
 
 
 class MemoryMappedDataset(torch.utils.data.Dataset):
@@ -154,9 +156,9 @@ class QueryTSVDataset(MemoryMappedDataset):
     def process_line(self, line):
         vals = self._parse_line(line)
         return {
-                "id": vals[0],
-                "question": vals[1],
-            }
+            "id": vals[0],
+            "question": vals[1],
+        }
 
 
 class DenseRetrieverDataModuleBase(LightningDataModule):
@@ -178,9 +180,9 @@ class DenseRetrieverDataModuleBase(LightningDataModule):
     def train_dataloader(self):
         sampler = None
         if (
-            self.trainer
-            and hasattr(self.trainer, "world_size")
-            and self.trainer.world_size > 1
+                self.trainer
+                and hasattr(self.trainer, "world_size")
+                and self.trainer.world_size > 1
         ):
             sampler = ContiguousDistributedSampler(
                 self.datasets["train"], num_replicas_per_node=self.trainer.gpus
@@ -228,20 +230,20 @@ class DPRDistillJsonlDataModule(DenseRetrieverDataModuleBase):
     """
 
     def __init__(
-        self,
-        transform,
-        # Dataset args
-        train_path: str,
-        val_path: str,
-        test_path: str,
-        batch_size: int = 2,
-        val_batch_size: int = 0,
-        test_batch_size: int = 0,
-        pos_ctx_sample: bool = True,  # defaults to use positive context sampling
-        drop_last: bool = False,  # drop last batch if len(dataset) not multiple of bs
-        num_workers: int = 0,  # increasing this bugs out right now
-        *args,
-        **kwargs,
+            self,
+            transform,
+            # Dataset args
+            train_path: str,
+            val_path: str,
+            test_path: str,
+            batch_size: int = 2,
+            val_batch_size: int = 0,
+            test_batch_size: int = 0,
+            pos_ctx_sample: bool = True,  # defaults to use positive context sampling
+            drop_last: bool = False,  # drop last batch if len(dataset) not multiple of bs
+            num_workers: int = 0,  # increasing this bugs out right now
+            *args,
+            **kwargs,
     ) -> None:
         super().__init__(transform)
         self.batch_size = batch_size
@@ -273,29 +275,29 @@ class DenseRetrieverJsonlDataModule(DenseRetrieverDataModuleBase):
     """
 
     def __init__(
-        self,
-        transform,
-        # Dataset args
-        train_path: str,
-        val_path: str,
-        test_path: str,
-        batch_size: int = 2,
-        val_batch_size: int = 0,  # defaults to batch_size
-        test_batch_size: int = 0,  # defaults to val_batch_size
-        num_positive: int = 1,  # currently, like the original paper only 1 is supported
-        num_negative: int = 7,
-        neg_ctx_sample: bool = True,
-        pos_ctx_sample: bool = False,
-        num_val_negative: int = 7,  # num negatives to use in validation
-        num_test_negative: int = 0,  # defaults to num_val_negative
-        drop_last: bool = False,  # drop last batch if len(dataset) not multiple of bs
-        num_workers: int = 0,  # increasing this bugs out right now
-        use_title: bool = False,  # use the title for context passages
-        sep_token: str = " ",  # sep token between title and passage
-        use_cross_attention: bool = False,  # Use cross attention model
-        rel_sample: bool = False,  # Use relevance scores to sample ctxs
-        *args,
-        **kwargs,
+            self,
+            transform,
+            # Dataset args
+            train_path: str,
+            val_path: str,
+            test_path: str,
+            batch_size: int = 2,
+            val_batch_size: int = 0,  # defaults to batch_size
+            test_batch_size: int = 0,  # defaults to val_batch_size
+            num_positive: int = 1,  # currently, like the original paper only 1 is supported
+            num_negative: int = 7,
+            neg_ctx_sample: bool = True,
+            pos_ctx_sample: bool = False,
+            num_val_negative: int = 7,  # num negatives to use in validation
+            num_test_negative: int = 0,  # defaults to num_val_negative
+            drop_last: bool = False,  # drop last batch if len(dataset) not multiple of bs
+            num_workers: int = 0,  # increasing this bugs out right now
+            use_title: bool = False,  # use the title for context passages
+            sep_token: str = " ",  # sep token between title and passage
+            use_cross_attention: bool = False,  # Use cross attention model
+            rel_sample: bool = False,  # Use relevance scores to sample ctxs
+            *args,
+            **kwargs,
     ):
         super().__init__(transform)
         self.batch_size = batch_size
@@ -321,9 +323,9 @@ class DenseRetrieverJsonlDataModule(DenseRetrieverDataModuleBase):
         )
         self.num_workers = num_workers
         self.datasets = {
-            "train": MemoryMappedDataset(train_path),
-            "valid": MemoryMappedDataset(val_path),
-            "test": MemoryMappedDataset(test_path),
+            "train": load_dataset('json',data_files=train_path,),
+            "valid": load_dataset('json',data_files=val_path),
+            "test": load_dataset('json',data_files=test_path),
         }
 
     def collate(self, batch, stage):
@@ -347,32 +349,32 @@ class DenseRetrieverMultiJsonlDataModule(DenseRetrieverDataModuleBase):
     """
 
     def __init__(
-        self,
-        transform,
-        # Dataset args
-        train_path: List[str],
-        val_path: str,
-        test_path: str,
-        batch_size: int = 2,
-        val_batch_size: int = 0,  # defaults to batch_size
-        test_batch_size: int = 0,  # defaults to val_batch_size
-        num_positive: int = 1,  # currently, like the original paper only 1 is supported
-        num_negative: int = 7,
-        neg_ctx_sample: bool = True,
-        pos_ctx_sample: bool = False,
-        num_val_negative: int = 7,  # num negatives to use in validation
-        num_test_negative: int = 0,  # defaults to num_val_negative
-        drop_last: bool = False,  # drop last batch if len(dataset) not multiple of bs
-        num_workers: int = 0,  # increasing this bugs out right now
-        use_title: bool = False,  # use the title for context passages
-        sep_token: str = " ",  # sep token between title and passage
-        use_cross_attention: bool = False, # Use cross attention model
-        rel_sample: bool = False,  # Use relevance scores to sample ctxs
-        corpus_path: str = None, # if corpus is None, we assume the training data includes passage text
-        *args,
-        **kwargs,
+            self,
+            transform,
+            # Dataset args
+            train_path: List[str],
+            val_path: str,
+            test_path: str,
+            batch_size: int = 2,
+            val_batch_size: int = 0,  # defaults to batch_size
+            test_batch_size: int = 0,  # defaults to val_batch_size
+            num_positive: int = 1,  # currently, like the original paper only 1 is supported
+            num_negative: int = 7,
+            neg_ctx_sample: bool = True,
+            pos_ctx_sample: bool = False,
+            num_val_negative: int = 7,  # num negatives to use in validation
+            num_test_negative: int = 0,  # defaults to num_val_negative
+            drop_last: bool = False,  # drop last batch if len(dataset) not multiple of bs
+            num_workers: int = 0,  # increasing this bugs out right now
+            use_title: bool = False,  # use the title for context passages
+            sep_token: str = " ",  # sep token between title and passage
+            use_cross_attention: bool = False,  # Use cross attention model
+            rel_sample: bool = False,  # Use relevance scores to sample ctxs
+            corpus_path: str = None,  # if corpus is None, we assume the training data includes passage text
+            *args,
+            **kwargs,
     ):
-        
+
         super().__init__(transform)
         self.batch_size = batch_size
         self.val_batch_size = val_batch_size if val_batch_size else batch_size
@@ -387,7 +389,7 @@ class DenseRetrieverMultiJsonlDataModule(DenseRetrieverDataModuleBase):
         corpus = None
         if corpus_path is not None:
             corpus = MemoryMappedDataset(corpus_path, header=True)
-        
+
         self.dpr_transform = transform_class(
             transform,
             num_positive,
@@ -418,15 +420,15 @@ class DenseRetrieverPassagesDataModule(DenseRetrieverDataModuleBase):
     """
 
     def __init__(
-        self,
-        transform,
-        test_path: str,
-        test_batch_size: int = 128,  # defaults to val_batch_size
-        num_workers: int = 0,  # increasing this bugs out right now
-        use_title: bool = False,  # use the title for context passages
-        sep_token: str = " [SEP] ",  # sep token between title and passage
-        *args,
-        **kwargs,
+            self,
+            transform,
+            test_path: str,
+            test_batch_size: int = 128,  # defaults to val_batch_size
+            num_workers: int = 0,  # increasing this bugs out right now
+            use_title: bool = False,  # use the title for context passages
+            sep_token: str = " [SEP] ",  # sep token between title and passage
+            *args,
+            **kwargs,
     ):
         super().__init__(transform)
         self.test_batch_size = test_batch_size
@@ -463,9 +465,9 @@ class DenseRetrieverPassagesDataModule(DenseRetrieverDataModuleBase):
     def test_dataloader(self):
         sampler = None
         if (
-            self.trainer
-            and hasattr(self.trainer, "world_size")
-            and self.trainer.world_size > 1
+                self.trainer
+                and hasattr(self.trainer, "world_size")
+                and self.trainer.world_size > 1
         ):
             sampler = ContiguousDistributedSamplerForTest(self.datasets["test"])
 
@@ -485,19 +487,19 @@ class DenseRetrieverQueriesDataModule(DenseRetrieverDataModuleBase):
     """
 
     def __init__(
-        self,
-        transform,
-        test_path: str,
-        test_batch_size: int = 128,  # defaults to val_batch_size
-        num_workers: int = 0,  # increasing this bugs out right now
-        trec_format: bool = False, # the format is used for msmarco query
-        *args,
-        **kwargs,
+            self,
+            transform,
+            test_path: str,
+            test_batch_size: int = 128,  # defaults to val_batch_size
+            num_workers: int = 0,  # increasing this bugs out right now
+            trec_format: bool = False,  # the format is used for msmarco query
+            *args,
+            **kwargs,
     ):
         super().__init__(transform)
         self.test_batch_size = test_batch_size
         self.num_workers = num_workers
-        self.datasets = {"test": QueryTSVDataset(test_path) if trec_format else QueryCSVDataset(test_path) }
+        self.datasets = {"test": QueryTSVDataset(test_path) if trec_format else QueryCSVDataset(test_path)}
 
     def collate(self, batch, stage):
         ctx_tensors = self._transform([row["question"] for row in batch])
@@ -512,9 +514,9 @@ class DenseRetrieverQueriesDataModule(DenseRetrieverDataModuleBase):
     def test_dataloader(self):
         sampler = None
         if (
-            self.trainer
-            and hasattr(self.trainer, "world_size")
-            and self.trainer.world_size > 1
+                self.trainer
+                and hasattr(self.trainer, "world_size")
+                and self.trainer.world_size > 1
         ):
             sampler = ContiguousDistributedSamplerForTest(self.datasets["test"])
 
