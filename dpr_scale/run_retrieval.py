@@ -1,24 +1,26 @@
 # (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
 
-# @manual=//faiss/python:pyfaiss
-import faiss
-import hydra
 import glob
 import json
 import os
 import pickle
+from typing import Dict, List
+
+# @manual=//faiss/python:pyfaiss
+import faiss
+import hydra
+from lightning import Trainer
+from omegaconf import open_dict
+
 from dpr_scale.conf.config import MainConfig
 from dpr_scale.datamodule.dpr import CSVDataset, QueryCSVDataset
-from omegaconf import open_dict
-from pytorch_lightning.trainer import Trainer
-from typing import Dict, List
 
 
 def merge_results(
-    passages: Dict,
-    questions: List,
-    top_doc_ids: List,
-    scores_list: List,
+        passages: Dict,
+        questions: List,
+        top_doc_ids: List,
+        scores_list: List,
 ):
     # join passages text with the result ids, their questions
     merged_data = []
@@ -89,7 +91,7 @@ def main(cfg: MainConfig):
     # reload question embeddings
     print("Loading question vectors.")
     with open(
-        task.query_emb_output_path, "rb"
+            task.query_emb_output_path, "rb"
     ) as f:
         q_repr = pickle.load(f)
 

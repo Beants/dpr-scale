@@ -1,4 +1,4 @@
-# @package _group_
+
 _target_: pytorch_lightning.callbacks.ModelCheckpoint
 monitor: valid_mrr
 mode: max  # this means that model_selection_metric should be maximized

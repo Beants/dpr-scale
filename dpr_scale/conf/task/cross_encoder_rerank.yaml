@@ -1,4 +1,4 @@
-# @package _group_
+
 _target_: dpr_scale.task.cross_encoder_eval_task.RerankCrossEncoderTask
 shared_model: false
 in_batch_eval: false

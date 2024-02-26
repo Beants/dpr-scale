@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from dpr_scale.utils.utils import PathManager, ScriptEncoder
 from pytorch_lightning import LightningModule
-from pytorch_lightning.strategies import DDPShardedStrategy, DDPStrategy
+from pytorch_lightning.strategies import FSDPStrategy, DDPStrategy
 from torch.distributed.algorithms.ddp_comm_hooks.default_hooks import fp16_compress_hook
 from torch.optim.lr_scheduler import LambdaLR
 from torch.serialization import default_restore_location
@@ -162,7 +162,7 @@ class DenseRetrieverTask(LightningModule):
 
         if self.in_batch_negatives:
             # gather all tensors for training w/ in_batch_negatives
-            if isinstance(self.trainer.strategy, (DDPStrategy, DDPShardedStrategy)):
+            if isinstance(self.trainer.strategy, (DDPStrategy, FSDPStrategy)):
                 query_to_send = query_repr.detach()
                 context_to_send = context_repr.detach()
                 # assumes all nodes have same number of contexts

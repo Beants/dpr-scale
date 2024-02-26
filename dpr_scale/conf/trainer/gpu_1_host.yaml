@@ -1,4 +1,4 @@
-# @package _group_
+
 gpus: 8
 max_steps: null
 max_epochs: 40
