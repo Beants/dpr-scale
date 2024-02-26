@@ -1,6 +1,5 @@
 
-gpus: 8
-max_steps: null
+max_steps: -1
 max_epochs: 40
 num_nodes: 1
 num_sanity_val_steps: 0
