@@ -327,7 +327,7 @@ class DenseRetrieverJsonDataModule(DenseRetrieverDataModuleBase):
             "valid": load_dataset('json', data_files=val_path),
             "test": load_dataset('json', data_files=test_path),
         }
-        print(self.datasets)
+        print('self.datasets', self.datasets)
 
     def collate(self, batch, stage):
         return self.dpr_transform(batch, stage)
@@ -392,6 +392,7 @@ class DenseRetrieverJsonlDataModule(DenseRetrieverDataModuleBase):
             "valid": MemoryMappedDataset(val_path),
             "test": MemoryMappedDataset(test_path),
         }
+        print('self.datasets', self.datasets)
 
     def collate(self, batch, stage):
         return self.dpr_transform(batch, stage)
