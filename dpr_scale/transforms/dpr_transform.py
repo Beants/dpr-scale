@@ -1,30 +1,33 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+from typing import Optional
+
 import hydra
 import numpy as np
 import torch
 import torch.nn as nn
 import ujson  # @manual=third-party//ultrajson:ultrajson
+
 from dpr_scale.transforms.hf_transform import HFTransform
 from dpr_scale.utils.utils import maybe_add_title
-from typing import Optional
+
 
 class DPRTransform(nn.Module):
     def __init__(
-        self,
-        text_transform,
-        num_positive: int = 1,  # currently, like the original paper only 1 is supported
-        num_negative: int = 7,
-        neg_ctx_sample: bool = True,  # sample from negative list
-        pos_ctx_sample: bool = False,  # sample from positives list
-        num_val_negative: int = 7,  # num negatives to use in validation
-        num_test_negative=None,  # defaults to num_val_negative
-        use_title: bool = False,  # use the title for context passages
-        sep_token: str = " ",  # sep token between title and passage
-        rel_sample: bool = False,  # Use relevance scores to sample ctxs
-        corpus: Optional[torch.utils.data.Dataset] = None, # type: MemoryMappedDataset (inherited from torch.utils.data.Dataset) from dpr_scale.datamodule.dpr. 
-        # if corpus is None, we assume the training data includes passage text
-        text_column: str = "text",  # for onbox
+            self,
+            text_transform,
+            num_positive: int = 1,  # currently, like the original paper only 1 is supported
+            num_negative: int = 7,
+            neg_ctx_sample: bool = True,  # sample from negative list
+            pos_ctx_sample: bool = False,  # sample from positives list
+            num_val_negative: int = 7,  # num negatives to use in validation
+            num_test_negative=None,  # defaults to num_val_negative
+            use_title: bool = False,  # use the title for context passages
+            sep_token: str = " ",  # sep token between title and passage
+            rel_sample: bool = False,  # Use relevance scores to sample ctxs
+            corpus: Optional[torch.utils.data.Dataset] = None,  # type: MemoryMappedDataset (inherited from torch.utils.data.Dataset) from dpr_scale.datamodule.dpr.
+            # if corpus is None, we assume the training data includes passage text
+            text_column: str = "text",  # for onbox
     ):
         super().__init__()
         if num_positive > 1:
@@ -72,7 +75,8 @@ class DPRTransform(nn.Module):
         scores = []
         rows = batch if type(batch) is list else batch[self.text_column]
         for row in rows:
-            row = ujson.loads(row)
+            if not isinstance(row, dict):
+                row = ujson.loads(row)
             # also support DPR output format
             if "positive_ctxs" not in row and "ctxs" in row:
                 row["positive_ctxs"] = []
@@ -120,9 +124,9 @@ class DPRTransform(nn.Module):
 
             if num_neg_sample > 0:
                 if (
-                    stage == "train"
-                    and self.neg_ctx_sample
-                    and len(contexts_neg) > num_neg_sample
+                        stage == "train"
+                        and self.neg_ctx_sample
+                        and len(contexts_neg) > num_neg_sample
                 ):
                     rel = [
                         ctx.get("relevance", 1.0) if self.rel_sample else 1.0
@@ -157,7 +161,7 @@ class DPRTransform(nn.Module):
                 mask.extend([1] * (num_neg_sample - len(contexts_neg)))
             # make sure all rows have same context count
             assert len(ctxs) == (
-                self.num_positive + num_neg_sample
+                    self.num_positive + num_neg_sample
             ), f"Row has improper ctx count. Check positive ctxs in: {row}"
             # teacher's retrieval score for distillation
             scores.append([float(x["score"]) if "score" in x else 0 for x in ctxs])
@@ -168,8 +172,8 @@ class DPRTransform(nn.Module):
             ctx_mask.extend(mask)
 
         ctx_text = []
-        for x in all_ctxs: 
-            if self.corpus is None: #if corpus is not included, we may get text directly from train json file
+        for x in all_ctxs:
+            if self.corpus is None:  # if corpus is not included, we may get text directly from train json file
                 ctx_text.append(maybe_add_title(x["text"], x["title"], self.use_title, self.sep_token))
             else:
                 docid, text, title = self.corpus[int(x['docidx'])].decode('UTF-8').strip().split('\t')
@@ -189,19 +193,19 @@ class DPRTransform(nn.Module):
 
 class DPRCrossAttentionTransform(DPRTransform):
     def __init__(
-        self,
-        text_transform,
-        num_positive: int = 1,
-        num_negative: int = 7,
-        neg_ctx_sample: bool = True,
-        pos_ctx_sample: bool = False,
-        num_val_negative: int = 7,  # num negatives to use in validation
-        num_test_negative: int = None,  # defaults to num_val_negative
-        use_title: bool = False,  # Not supported for now
-        sep_token: str = " ",  # sep token between question and passage
-        text_column: str = "text",  # for onbox
-        num_random_negs: int = 0,
-        rel_sample: bool = False,  # Not supported for now
+            self,
+            text_transform,
+            num_positive: int = 1,
+            num_negative: int = 7,
+            neg_ctx_sample: bool = True,
+            pos_ctx_sample: bool = False,
+            num_val_negative: int = 7,  # num negatives to use in validation
+            num_test_negative: int = None,  # defaults to num_val_negative
+            use_title: bool = False,  # Not supported for now
+            sep_token: str = " ",  # sep token between question and passage
+            text_column: str = "text",  # for onbox
+            num_random_negs: int = 0,
+            rel_sample: bool = False,  # Not supported for now
     ):
         super().__init__(
             text_transform,
@@ -283,9 +287,9 @@ class DPRCrossAttentionTransform(DPRTransform):
 
             if num_neg_sample > 0:
                 if (
-                    stage == "train"
-                    and self.neg_ctx_sample
-                    and len(contexts_neg) > num_neg_sample
+                        stage == "train"
+                        and self.neg_ctx_sample
+                        and len(contexts_neg) > num_neg_sample
                 ):
                     rel = [
                         ctx.get("relevance", 1.0) if self.rel_sample else 1.0
