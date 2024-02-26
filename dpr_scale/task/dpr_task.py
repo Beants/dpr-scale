@@ -312,7 +312,7 @@ class DenseRetrieverTask(LightningModule):
     def validation_step(self, batch, batch_idx):
         return self._eval_step(batch, batch_idx)
 
-    def validation_epoch_end(self, valid_outputs):
+    def on_validation_epoch_end(self, valid_outputs):
         self._eval_epoch_end(valid_outputs) if valid_outputs else None
 
     def test_step(self, batch, batch_idx):
