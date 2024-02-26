@@ -16,7 +16,7 @@ defaults = [
     # Optim
     {"task/optim": "adamw"},
     # Data
-    {"datamodule": "default"},
+    {"datamodule": "hitalent"},
     # Trainer
     {"trainer": "gpu_1_host"},
     # Trainer callbacks

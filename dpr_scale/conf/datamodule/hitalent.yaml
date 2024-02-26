@@ -1,0 +1,10 @@
+
+_target_: dpr_scale.datamodule.dpr.DenseRetrieverJsonDataModule
+train_path: "/workspace/shared/rater_data/data_dpr/biz_skill_train.json"
+val_path: "/workspace/shared/rater_data/data_dpr/biz_skill_test.json"
+test_path: "/workspace/shared/rater_data/data_dpr/biz_skill_test.json"
+batch_size: 2
+num_negative: 2
+num_val_negative: 2
+drop_last: False
+use_title: True
