@@ -25,7 +25,6 @@ datamodule:
   use_title: false
 
 trainer:
-  gpus: 8
   num_nodes: 1
   max_epochs: 20
   num_sanity_val_steps: 0

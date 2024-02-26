@@ -26,7 +26,6 @@ datamodule:
   num_workers: 2
 
 trainer:
-  gpus: 8
   num_nodes: 8
   max_steps: 1000
   num_sanity_val_steps: 0
