@@ -323,9 +323,9 @@ class DenseRetrieverJsonDataModule(DenseRetrieverDataModuleBase):
         )
         self.num_workers = num_workers
         self.datasets = {
-            "train": load_dataset('json', data_files=train_path),
-            "valid": load_dataset('json', data_files=val_path),
-            "test": load_dataset('json', data_files=test_path),
+            "train": load_dataset('json', data_files=train_path, split='train'),
+            "valid": load_dataset('json', data_files=val_path, split='train'),
+            "test": load_dataset('json', data_files=test_path, split='train'),
         }
         print('self.datasets', self.datasets)
 
@@ -388,7 +388,7 @@ class DenseRetrieverJsonlDataModule(DenseRetrieverDataModuleBase):
         )
         self.num_workers = num_workers
         self.datasets = {
-            "train": MemoryMappedDataset(train_path, ),
+            "train": MemoryMappedDataset(train_path),
             "valid": MemoryMappedDataset(val_path),
             "test": MemoryMappedDataset(test_path),
         }
