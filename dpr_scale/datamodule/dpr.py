@@ -268,6 +268,71 @@ class DPRDistillJsonlDataModule(DenseRetrieverDataModuleBase):
         return self.drboost_distill_transform(batch, stage)
 
 
+class DenseRetrieverJsonDataModule(DenseRetrieverDataModuleBase):
+    """
+    This reads a jsonl file with json objects from the original DPR data obtained from
+    https://github.com/facebookresearch/DPR/blob/master/data/download_data.py.
+    """
+
+    def __init__(
+            self,
+            transform,
+            # Dataset args
+            train_path: str,
+            val_path: str,
+            test_path: str,
+            batch_size: int = 2,
+            val_batch_size: int = 0,  # defaults to batch_size
+            test_batch_size: int = 0,  # defaults to val_batch_size
+            num_positive: int = 1,  # currently, like the original paper only 1 is supported
+            num_negative: int = 7,
+            neg_ctx_sample: bool = True,
+            pos_ctx_sample: bool = False,
+            num_val_negative: int = 7,  # num negatives to use in validation
+            num_test_negative: int = 0,  # defaults to num_val_negative
+            drop_last: bool = False,  # drop last batch if len(dataset) not multiple of bs
+            num_workers: int = 0,  # increasing this bugs out right now
+            use_title: bool = False,  # use the title for context passages
+            sep_token: str = " ",  # sep token between title and passage
+            use_cross_attention: bool = False,  # Use cross attention model
+            rel_sample: bool = False,  # Use relevance scores to sample ctxs
+            *args,
+            **kwargs,
+    ):
+        super().__init__(transform)
+        self.batch_size = batch_size
+        self.val_batch_size = val_batch_size if val_batch_size else batch_size
+        self.test_batch_size = (
+            test_batch_size if test_batch_size else self.val_batch_size
+        )
+        transform_class = DPRTransform
+        if use_cross_attention:
+            transform_class = DPRCrossAttentionTransform
+        self.dpr_transform = transform_class(
+            transform,
+            num_positive,
+            num_negative,
+            neg_ctx_sample,
+            pos_ctx_sample,
+            num_val_negative,
+            num_test_negative,
+            use_title,
+            sep_token,
+            rel_sample,
+            **kwargs,
+        )
+        self.num_workers = num_workers
+        self.datasets = {
+            "train": load_dataset('json', data_files=train_path),
+            "valid": load_dataset('json', data_files=val_path),
+            "test": load_dataset('json', data_files=test_path),
+        }
+        print(self.datasets)
+
+    def collate(self, batch, stage):
+        return self.dpr_transform(batch, stage)
+
+
 class DenseRetrieverJsonlDataModule(DenseRetrieverDataModuleBase):
     """
     This reads a jsonl file with json objects from the original DPR data obtained from
@@ -323,9 +388,9 @@ class DenseRetrieverJsonlDataModule(DenseRetrieverDataModuleBase):
         )
         self.num_workers = num_workers
         self.datasets = {
-            "train": load_dataset('json',data_files=train_path,),
-            "valid": load_dataset('json',data_files=val_path),
-            "test": load_dataset('json',data_files=test_path),
+            "train": MemoryMappedDataset(train_path, ),
+            "valid": MemoryMappedDataset(val_path),
+            "test": MemoryMappedDataset(test_path),
         }
 
     def collate(self, batch, stage):
